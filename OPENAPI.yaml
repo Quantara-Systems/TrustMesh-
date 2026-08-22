@@ -1,0 +1,313 @@
+openapi: 3.0.3
+info:
+  title: TrustMesh API
+  description: Autonomous Agent Commerce Wallet Backend Server OpenAPI Spec
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /auth/signup:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, displayName]
+              properties:
+                email: { type: string }
+                password: { type: string }
+                displayName: { type: string }
+      responses:
+        '200':
+          description: Successful signup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/logout:
+    post:
+      summary: Terminate session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /auth/biometrics:
+    put:
+      summary: Update biometric enforcement preference
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: enabled
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Preference saved successfully
+
+  /auth/sessions:
+    get:
+      summary: List active devices/sessions
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active session descriptors returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items: { type: string }
+
+  /agents:
+    get:
+      summary: Fetch deployed agents list
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of agent configurations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentDto'
+    post:
+      summary: Deploy new AI agent
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '200':
+          description: Agent deployed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDto'
+
+  /agents/{id}/envelope:
+    put:
+      summary: Edit spend envelope constraints
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [limitAmount, windowType]
+              properties:
+                limitAmount: { type: number }
+                windowType: { type: string }
+      responses:
+        '200':
+          description: Limits updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentDto'
+
+  /transactions:
+    get:
+      summary: Fetch transactions history
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: agentId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Historical records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionDto'
+
+  /transactions/request:
+    post:
+      summary: Ingest transaction from simulator
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRequest'
+      responses:
+        '201':
+          description: Transaction released successfully
+        '202':
+          description: Transaction held in escrow warning (limit exceeded)
+        '403':
+          description: Refused due to deactivated agent
+
+  /transactions/escrow:
+    get:
+      summary: Fetch escalated holds
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Holds list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EscrowItemDto'
+
+  /transactions/escrow/{id}/action:
+    post:
+      summary: Override hold (Approve/Deny)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action: { type: string, enum: [APPROVE, DENY] }
+      responses:
+        '200':
+          description: Resolved held status
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token: { type: string }
+        refreshToken: { type: string }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            email: { type: string }
+            displayName: { type: string }
+            biometricEnabled: { type: boolean }
+            createdAt: { type: string }
+    AgentDto:
+      type: object
+      properties:
+        id: { type: string }
+        ownerId: { type: string }
+        name: { type: string }
+        intentStatement: { type: string }
+        categoryScope:
+          type: array
+          items: { type: string }
+        limitAmount: { type: number }
+        windowType: { type: string }
+        currentUtilization: { type: number }
+        escalationRules:
+          type: array
+          items:
+            type: object
+        status: { type: string }
+        createdAt: { type: string }
+    CreateAgentRequest:
+      type: object
+      properties:
+        name: { type: string }
+        intentStatement: { type: string }
+        categoryScope:
+          type: array
+          items: { type: string }
+        limitAmount: { type: number }
+        windowType: { type: string }
+        escalationRules:
+          type: array
+          items:
+            type: object
+    TransactionDto:
+      type: object
+      properties:
+        id: { type: string }
+        agentId: { type: string }
+        merchantName: { type: string }
+        merchantCategory: { type: string }
+        amount: { type: number }
+        status: { type: string }
+        negotiationDetail: { type: string }
+        createdAt: { type: string }
+    TransactionRequest:
+      type: object
+      properties:
+        agentId: { type: string }
+        merchantName: { type: string }
+        merchantCategory: { type: string }
+        amount: { type: number }
+        negotiationDetail: { type: string }
+    EscrowItemDto:
+      type: object
+      properties:
+        id: { type: string }
+        transactionId: { type: string }
+        state: { type: string }
+        conditionType: { type: string }
+        conditionThreshold: { type: number }
+        createdAt: { type: string }
+        resolvedAt: { type: string, nullable: true }
