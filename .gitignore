@@ -1,0 +1,18 @@
+# IDE / IntelliJ
+.idea/
+*.iml
+out/
+
+# Gradle / Build
+.gradle/
+build/
+
+# Local / OS / Logs
+local.properties
+.DS_Store
+Thumbs.db
+*.log
+*.zip
+*.tar.gz
+*.class
+.env
