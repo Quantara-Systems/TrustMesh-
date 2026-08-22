@@ -1,4 +1,4 @@
-# TrustMesh: A Cryptographically Auditable Multi-Agent Commerce and Micro-Escrow Control Framework for Autonomous Procurement Ecosystems
+# TrustMesh: A Cryptographic Micro-Escrow and Spend-Policy Enforcement Protocol for Autonomous Agent-Based Commerce
 
 ## Abstract
 As autonomous artificial intelligence agents increasingly participate in decentralized commerce, there is an urgent need for security and accountability frameworks that govern their financial activities. **TrustMesh** is a client-server control and cryptographic audit system designed to authorize, constrain, and audit autonomous AI procurement assistants. The platform comprises a multi-module Kotlin Android client application and a Kotlin Ktor backend server. TrustMesh enforces security bounds via transaction limits (Spend Envelopes) locked in micro-escrow holds, and guarantees historical transaction integrity via a cryptographically linked hash ledger.
