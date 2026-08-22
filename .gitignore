@@ -6,6 +6,7 @@ out/
 # Gradle / Build
 .gradle/
 build/
+**/bin/
 
 # Local / OS / Logs
 local.properties
@@ -16,3 +17,4 @@ Thumbs.db
 *.tar.gz
 *.class
 .env
+
