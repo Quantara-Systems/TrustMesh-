@@ -50,17 +50,13 @@ The server-side component is a high-performance REST and WebSocket API gateway b
 
 ## 2. Platform Visualizations
 
-Here is a visual overview of the TrustMesh interface and design architecture:
+Here is a visual overview of the TrustMesh mobile application interface:
 
-### 2.1 System Dashboard & Risk Profiles
-The dashboard provides a real-time monitor for active AI procurement agents, displaying cumulative spending limits, active micro-escrows, and risk metrics via customized Compose gauge controls.
+<p align="center">
+  <img src="./assets/screenshots/trustmesh_samsung_mockup_clean.jpg" width="360" alt="TrustMesh Samsung Mobile Interface" />
+</p>
 
-![TrustMesh Dashboard Mockup](./assets/screenshots/trustmesh_dashboard_mockup.png)
-
-### 2.2 User Interface Aesthetics
-Built with a sleek, premium design system featuring a curated light palette, high-contrast structural cards, and responsive micro-animations to facilitate trust and operational transparency.
-
-![TrustMesh Interface Aesthetics](./assets/screenshots/trustmesh_final_light.png)
+The platform features a sleek, premium design system with a curated light palette, high-contrast structural cards, and responsive micro-animations to facilitate trust and operational transparency.
 
 > [!NOTE]
 > **To Attach Additional Screenshots:** Place your PNG/JPEG images into the `assets/screenshots/` directory, naming them descriptively, and embed them in the markdown using:
