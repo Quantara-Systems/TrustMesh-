@@ -58,7 +58,9 @@ fun Route.accountRoutes() {
             }
 
             post("/plaid/link-token") {
-                val linkToken = PlaidClient.createLinkToken()
+                val principal = call.principal<JWTPrincipal>()
+                val userIdStr = principal?.subject ?: ""
+                val linkToken = PlaidClient.createLinkToken(userIdStr)
                 call.respond(PlaidTokenResponse(linkToken))
             }
 
