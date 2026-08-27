@@ -24,14 +24,14 @@ object PlaidClient {
     private val secret = System.getenv("PLAID_SECRET") ?: "test_secret"
     private const val PLAID_URL = "https://sandbox.plaid.com"
 
-    suspend fun createLinkToken(): String {
+    suspend fun createLinkToken(userId: String): String {
         return try {
             val response = client.post("$PLAID_URL/link/token/create") {
                 contentType(ContentType.Application.Json)
                 setBody(buildJsonObject {
                     put("client_id", clientId)
                     put("secret", secret)
-                    put("user", buildJsonObject { put("client_user_id", "trustmesh_user_1") })
+                    put("user", buildJsonObject { put("client_user_id", userId.ifEmpty { "trustmesh_user_1" }) })
                     put("client_name", "TrustMesh Wallet")
                     put("products", JsonArray(listOf(JsonPrimitive("auth"), JsonPrimitive("transactions"))))
                     put("country_codes", JsonArray(listOf(JsonPrimitive("US"))))
