@@ -45,6 +45,16 @@ fun Route.ledgerRoutes() {
                 }
                 call.respond(list)
             }
+
+            get("/verify") {
+                val (isValid, message) = LedgerService.verifyChain()
+                call.respond(
+                    mapOf(
+                        "isValid" to isValid,
+                        "message" to message
+                    )
+                )
+            }
         }
     }
 }

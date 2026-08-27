@@ -11,6 +11,8 @@ import io.ktor.server.routing.*
 import io.ktor.server.response.*
 import io.ktor.server.websocket.*
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
 import redis.clients.jedis.JedisPool
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource

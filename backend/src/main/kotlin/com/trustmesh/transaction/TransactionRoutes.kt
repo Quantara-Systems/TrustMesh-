@@ -169,7 +169,44 @@ fun Route.transactionRoutes() {
                     val utilization = agent[Agents.currentUtilization]
                     val requestedAmt = BigDecimal.valueOf(req.amount)
 
-                    if (utilization + requestedAmt > limit) {
+                    val categoryScopeStr = agent[Agents.categoryScope]
+                    val allowedCategories = categoryScopeStr.split(",")
+                        .map { it.trim().uppercase() }
+                        .filter { it.isNotEmpty() }
+
+                    val isCategoryAllowed = allowedCategories.contains(req.merchantCategory.trim().uppercase())
+
+                    if (!isCategoryAllowed) {
+                        Transactions.insert {
+                            it[id] = txId
+                            it[Transactions.agentId] = agentId
+                            it[merchantName] = req.merchantName
+                            it[merchantCategory] = req.merchantCategory
+                            it[amount] = requestedAmt
+                            it[Transactions.status] = "PENDING_CONDITION"
+                            it[negotiationDetail] = req.negotiationDetail
+                        }
+
+                        val escrowId = UUID.randomUUID()
+                        EscrowItems.insert {
+                            it[id] = escrowId
+                            it[transactionId] = txId
+                            it[state] = "PENDING"
+                            it[conditionType] = "CATEGORY_MISMATCH"
+                            it[conditionThreshold] = BigDecimal.ZERO
+                        }
+
+                        LedgerService.appendEntry(
+                            agentId = agentId,
+                            intent = agent[Agents.intentStatement],
+                            action = "Attempted purchase of Category ${req.merchantCategory} at ${req.merchantName} of $${req.amount} violated category scope constraints",
+                            outcome = "DRIFT_DETECTED"
+                        )
+                        application.launch {
+                            TransactionEventBus.post("ESCROW_HOLD|$txId")
+                        }
+                        "ESCROW_HOLD" to txId
+                    } else if (utilization + requestedAmt > limit) {
                         Transactions.insert {
                             it[id] = txId
                             it[Transactions.agentId] = agentId
