@@ -12,6 +12,7 @@ import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 import java.util.*
@@ -76,7 +77,7 @@ fun Route.authRoutes() {
             }
 
             val userId = userRow[Users.id]
-            val token = JwtProvider.generateToken(userId.toString())
+            val token = JwtProvider.generateAccessToken(userId.toString())
             val refreshToken = UUID.randomUUID().toString()
             val expiry = LocalDateTime.now().plusDays(7)
 
