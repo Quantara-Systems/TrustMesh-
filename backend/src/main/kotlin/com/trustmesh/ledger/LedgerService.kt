@@ -7,13 +7,14 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.security.MessageDigest
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 object LedgerService {
 
     fun appendEntry(agentId: UUID, intent: String, action: String, outcome: String): UUID {
         val entryId = UUID.randomUUID()
-        val now = LocalDateTime.now().withNano(0)
+        val now = LocalDateTime.now(ZoneOffset.UTC).withNano(0)
 
         val prevHash = transaction {
             val last = LedgerEntries.selectAll()
@@ -43,40 +44,58 @@ object LedgerService {
     }
 
     fun verifyChain(): Pair<Boolean, String> {
-        return transaction {
-            val entries = LedgerEntries.selectAll()
-                .orderBy(LedgerEntries.timestamp to SortOrder.ASC)
-                .map {
-                    LedgerEntryData(
-                        id = it[LedgerEntries.id],
-                        agentId = it[LedgerEntries.agentId],
-                        timestamp = it[LedgerEntries.timestamp],
-                        statedIntentSnapshot = it[LedgerEntries.statedIntentSnapshot],
-                        actionTaken = it[LedgerEntries.actionTaken],
-                        outcome = it[LedgerEntries.outcome],
-                        hash = it[LedgerEntries.entryHash],
-                        previousHash = it[LedgerEntries.previousHash]
-                    )
-                }
+        var offset = 0L
+        val batchSize = 1000
+        var prevHash = "GENESIS"
+        var hasMore = true
+        var isEmpty = true
 
-            if (entries.isEmpty()) return@transaction true to "Ledger is empty"
+        while (hasMore) {
+            val batch = transaction {
+                LedgerEntries.selectAll()
+                    .orderBy(LedgerEntries.timestamp to SortOrder.ASC)
+                    .limit(batchSize, offset = offset)
+                    .map {
+                        LedgerEntryData(
+                            id = it[LedgerEntries.id],
+                            agentId = it[LedgerEntries.agentId],
+                            timestamp = it[LedgerEntries.timestamp],
+                            statedIntentSnapshot = it[LedgerEntries.statedIntentSnapshot],
+                            actionTaken = it[LedgerEntries.actionTaken],
+                            outcome = it[LedgerEntries.outcome],
+                            hash = it[LedgerEntries.entryHash],
+                            previousHash = it[LedgerEntries.previousHash]
+                        )
+                    }
+            }
 
-            var prevHash = "GENESIS"
-            for (entry in entries) {
+            if (batch.isEmpty()) {
+                hasMore = false
+                break
+            }
+            isEmpty = false
+
+            for (entry in batch) {
                 if (entry.previousHash != prevHash) {
-                    return@transaction false to "Hash mismatch: expected previous hash '$prevHash' but got '${entry.previousHash}' in block ${entry.id}"
+                    return false to "Hash mismatch: expected previous hash '$prevHash' but got '${entry.previousHash}' in block ${entry.id}"
                 }
 
                 val contentString = "${entry.id}|${entry.agentId}|${entry.timestamp}|${entry.statedIntentSnapshot}|${entry.actionTaken}|${entry.outcome}|${entry.previousHash}"
                 val computedHash = sha256(contentString)
                 if (entry.hash != computedHash) {
-                    return@transaction false to "Data corruption: computed hash '$computedHash' does not match stored hash '${entry.hash}' in block ${entry.id}"
+                    return false to "Data corruption: computed hash '$computedHash' does not match stored hash '${entry.hash}' in block ${entry.id}"
                 }
                 prevHash = entry.hash
             }
 
-            true to "Ledger cryptographic integrity verified successfully"
+            offset += batch.size
+            if (batch.size < batchSize) {
+                hasMore = false
+            }
         }
+
+        if (isEmpty) return true to "Ledger is empty"
+        return true to "Ledger cryptographic integrity verified successfully"
     }
 
     private data class LedgerEntryData(
