@@ -1,0 +1,26 @@
+# Test Configuration for TrustMesh
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/trustmesh_test
+    username: test_user
+    password: test_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL10Dialect
+        format_sql: true
+  
+  test:
+    database:
+      replace: any
+
+logging:
+  level:
+    root: INFO
+    com.trustmesh: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
